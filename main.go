@@ -1,15 +1,17 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"strconv"
-	"path/filepath"
-	"io"
+	"bytes"
 	"fmt"
-	"time"
+	"io"
+	"log"
 	"math/rand"
+	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"time"
 )
 
 const PORT string = "1808"
@@ -21,7 +23,7 @@ func main() {
 	// serving static files at UPLOAD_DIR directory
 	// For example: http://your_host:port/static/1203.jpg
 	fs := http.FileServer(http.Dir(UPLOAD_DIR))
-  	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	log.Printf("Listen and serve at http://host:%s/api", PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, nil))
@@ -47,13 +49,23 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	rand_name := strconv.FormatInt(time.Now().Unix(), 10) + "_" + strconv.Itoa(rand.Intn(1000)) + ".jpg"
 	image_path := filepath.Join(UPLOAD_DIR, rand_name)
 	f, err := os.Create(image_path)
-    if err != nil {
-    	log.Println("Create file failed: ", err.Error())
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-        return
-    }
+	if err != nil {
+		log.Println("Create file failed: ", err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	defer f.Close()
 	io.Copy(f, image)
+
+	// do something with the image by bash shell
+	cmd := exec.Command("ls", "-l", image_path)
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	if err = cmd.Run(); err != nil {
+		log.Println("Execute command failed", err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+	log.Println(output.String())
 
 	// returns result in JSON message
 	result := fmt.Sprintf(`{"url": "/static/%s"}`, rand_name)
