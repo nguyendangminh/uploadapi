@@ -7,5 +7,5 @@ $ mkdir -p sandbox/upload
 $ cd sandbox
 $ export GOPATH=$(pwd)
 $ go get github.com/nguyendangminh/uploadapi
-$ ./uploadapi
+$ ./bin/uploadapi
 ```
