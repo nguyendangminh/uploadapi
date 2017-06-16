@@ -59,13 +59,15 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// do something with the image by bash shell
 	cmd := exec.Command("ls", "-l", image_path)
-	var output bytes.Buffer
+	var output, errout bytes.Buffer
 	cmd.Stdout = &output
+	cmd.Stderr = &errout
 	if err = cmd.Run(); err != nil {
 		log.Println("Execute command failed", err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
-	log.Println(output.String())
+	log.Printf("Stdout:\n%s", output.String())
+	log.Printf("Stderr:\n%s", errout.String())
 
 	// returns result in JSON message
 	result := fmt.Sprintf(`{"url": "/static/%s"}`, rand_name)
